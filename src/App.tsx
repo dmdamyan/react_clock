@@ -6,17 +6,17 @@ type State = {
   today: Date;
   clockName: string;
   hasClock: boolean;
-  timerId1: number;
-  timerId2: number;
 };
 
-export class App extends React.Component {
+export class App extends React.Component<{}, State> {
+  private timerId1: number | null = null;
+
+  private timerId2: number | null = null;
+
   state: Readonly<State> = {
     today: new Date(),
     clockName: 'Clock-0',
     hasClock: true,
-    timerId1: 0,
-    timerId2: 0,
   };
 
   getRandomName(): string {
@@ -25,53 +25,59 @@ export class App extends React.Component {
     return `Clock-${value}`;
   }
 
+  handleContextMenu = (event: MouseEvent) => {
+    event.preventDefault(); // Запобігаємо появі контекстного меню
+    this.setState({ hasClock: false });
+  };
+
+  handleClick = () => {
+    this.setState({ hasClock: true });
+  };
+
   // This code starts a timer
   componentDidMount(): void {
-    this.setState({
-      timerId1: window.setInterval(() => {
-        this.setState({ clockName: this.getRandomName() });
-      }, 3300),
-    });
+    this.timerId1 = window.setInterval(() => {
+      this.setState({ clockName: this.getRandomName() });
+    }, 3300);
 
-    this.setState({
-      timerId2: window.setInterval(() => {
-        this.setState({ today: new Date() });
-      }, 1000),
-    });
+    this.timerId2 = window.setInterval(() => {
+      this.setState({ today: new Date() });
+    }, 1000);
 
-    document.addEventListener('contextmenu', (event: MouseEvent) => {
-      event.preventDefault(); // not to show the context
+    document.addEventListener('contextmenu', this.handleContextMenu);
 
-      if (event) {
-        this.setState({ hasClock: false });
-      }
-    });
-
-    document.addEventListener('click', (event: MouseEvent) => {
-      if (event) {
-        this.setState({ hasClock: true });
-      }
-    });
+    document.addEventListener('click', this.handleClick);
   }
 
-  componentDidUpdate(): void {
-    if (this.state.hasClock) {
+  componentDidUpdate(prevProps: {}, prevState: State): void {
+    if (
+      this.state.hasClock &&
+      prevState.today.toUTCString() !== this.state.today.toUTCString()
+    ) {
       // eslint-disable-next-line no-console
       console.log(this.state.today.toUTCString().slice(-12, -4));
     }
 
-    if (this.getRandomName() !== this.state.clockName && this.state.hasClock) {
+    if (prevState.clockName !== this.state.clockName && this.state.hasClock) {
       // eslint-disable-next-line no-console
       console.log(
-        `Renamed from ${this.state.clockName} to ${this.getRandomName()}`,
+        `Renamed from ${prevState.clockName} to ${this.state.hasClock}`,
       );
     }
   }
 
   // this code stops the timer
   componentWillUnmount(): void {
-    window.clearInterval(this.state.timerId1);
-    window.clearInterval(this.state.timerId2);
+    if (this.timerId1) {
+      window.clearInterval(this.timerId1);
+    }
+
+    if (this.timerId2) {
+      window.clearInterval(this.timerId2);
+    }
+
+    document.removeEventListener('contextmenu', this.handleContextMenu);
+    document.removeEventListener('click', this.handleClick);
   }
 
   render() {
