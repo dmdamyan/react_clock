@@ -6,6 +6,8 @@ type State = {
   today: Date;
   clockName: string;
   hasClock: boolean;
+  timerId1: number;
+  timerId2: number;
 };
 
 export class App extends React.Component {
@@ -13,6 +15,8 @@ export class App extends React.Component {
     today: new Date(),
     clockName: 'Clock-0',
     hasClock: true,
+    timerId1: 0,
+    timerId2: 0,
   };
 
   getRandomName(): string {
@@ -23,6 +27,18 @@ export class App extends React.Component {
 
   // This code starts a timer
   componentDidMount(): void {
+    this.setState({
+      timerId1: window.setInterval(() => {
+        this.setState({ clockName: this.getRandomName() });
+      }, 3300),
+    });
+
+    this.setState({
+      timerId2: window.setInterval(() => {
+        this.setState({ today: new Date() });
+      }, 1000),
+    });
+
     document.addEventListener('contextmenu', (event: MouseEvent) => {
       event.preventDefault(); // not to show the context
 
@@ -36,35 +52,26 @@ export class App extends React.Component {
         this.setState({ hasClock: true });
       }
     });
-
-    this.timerId = window.setInterval(() => {
-      this.setState({ clockName: this.getRandomName() });
-    }, 3300);
-
-    window.setInterval(() => {
-      this.setState({ today: new Date() });
-
-      if (this.state.hasClock) {
-        // eslint-disable-next-line no-console
-        console.log(this.state.today.toUTCString().slice(-12, -4));
-      }
-    }, 1000);
   }
 
-  componentDidUpdate(prevProps: Readonly<State>): void {
-    if (prevProps.clockName === this.state.clockName && !this.state.hasClock) {
-      return;
+  componentDidUpdate(): void {
+    if (this.state.hasClock) {
+      // eslint-disable-next-line no-console
+      console.log(this.state.today.toUTCString().slice(-12, -4));
     }
 
-    // eslint-disable-next-line no-console
-    console.log(
-      `Renamed from ${this.state.clockName} to ${this.getRandomName()}`,
-    );
+    if (this.getRandomName() !== this.state.clockName && this.state.hasClock) {
+      // eslint-disable-next-line no-console
+      console.log(
+        `Renamed from ${this.state.clockName} to ${this.getRandomName()}`,
+      );
+    }
   }
 
   // this code stops the timer
   componentWillUnmount(): void {
-    window.clearInterval(this.timerId);
+    window.clearInterval(this.state.timerId1);
+    window.clearInterval(this.state.timerId2);
   }
 
   render() {
